@@ -33,7 +33,7 @@ class PDFReader(BaseReader):
         llama-index-integrations/readers/llama-index-readers-file/llama_index/readers/file/docs/base.py
     """
 
-    def __init__(self, return_full_document: bool = True):
+    def __init__(self, return_full_document: bool = False):
         self.return_full_document = return_full_document
 
     def load_data(self, file: Path, extra_info: Dict[str, Any] = None) -> List[SimpleDocument]:
@@ -61,10 +61,18 @@ class PDFReader(BaseReader):
             }
             if extra_info:
                 metadata.update(extra_info)
-            docs.append(SimpleDocument(text=text, metadata=metadata))
+            docs.append(SimpleDocument(
+                text=text, 
+                metadata=metadata,
+                start_char_idx=0,
+                end_char_idx=len(text)
+            ))
         else:
+            char_index = 0
             for page in range(num_pages):
                 page_text = pdf.pages[page].extract_text()
+                start_idx = char_index
+                end_idx = char_index + len(page_text)
                 metadata = {
                     "file_name": file.name,
                     "page_label": pdf.page_labels[page],
@@ -76,18 +84,36 @@ class PDFReader(BaseReader):
                 }
                 if extra_info:
                     metadata.update(extra_info)
-                docs.append(SimpleDocument(text=page_text, metadata=metadata))
+                docs.append(SimpleDocument(
+                    text=page_text, 
+                    metadata=metadata,
+                    start_char_idx=start_idx,
+                    end_char_idx=end_idx
+                ))
+                char_index = end_idx
 
         return docs
 
 
 if __name__ == '__main__':
     import os
+    from boring_utils.utils import cprint
+
     pdf_path = Path(os.getenv('DATA_DIR', '.')) / 'nutrition' / 'human-nutrition-text.pdf'
     reader = PDFReader()
     documents = reader.load_data(file=pdf_path)
+    print()
     
     if documents:
-        print(f"Text preview: {documents[0].text[:100]}...")
-        print("Metadata:", documents[0].metadata)    
+        cprint(len(documents), c='red')
 
+        id = 1
+        for _ in range(2):
+            if id < len(documents):
+                cprint(id)
+                cprint(documents[id].text[:100])
+                cprint(documents[id].metadata)    
+                cprint(documents[id].id_)
+                cprint(documents[id].start_char_idx, documents[id].end_char_idx)
+                id += 1
+            print()
