@@ -12,6 +12,10 @@ replace.sh
 Quick*.*
 Temp*.*
 
+data/nutrition/*
+!data/nutrition/readme.md
+!data/nutrition/prepare.py
+
 data/openwebtext/*
 !data/openwebtext/readme.md
 !data/openwebtext/prepare.py
