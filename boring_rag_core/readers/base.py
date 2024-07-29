@@ -10,7 +10,7 @@ from typing import (
     Optional,
 )
 
-from boring_rag_core.schema import SimpleDocument
+from boring_rag_core.schema import Document
 
 
 class BaseReader(ABC):
@@ -36,7 +36,7 @@ class PDFReader(BaseReader):
     def __init__(self, return_full_document: bool = False):
         self.return_full_document = return_full_document
 
-    def load_data(self, file: Path, extra_info: Dict[str, Any] = None) -> List[SimpleDocument]:
+    def load_data(self, file: Path, extra_info: Dict[str, Any] = None) -> List[Document]:
         if not isinstance(file, Path):
             file = Path(file)
 
@@ -61,7 +61,7 @@ class PDFReader(BaseReader):
             }
             if extra_info:
                 metadata.update(extra_info)
-            docs.append(SimpleDocument(
+            docs.append(Document(
                 text=text, 
                 metadata=metadata,
                 start_char_idx=0,
@@ -84,7 +84,7 @@ class PDFReader(BaseReader):
                 }
                 if extra_info:
                     metadata.update(extra_info)
-                docs.append(SimpleDocument(
+                docs.append(Document(
                     text=page_text, 
                     metadata=metadata,
                     start_char_idx=start_idx,
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     import os
     from boring_utils.utils import cprint
 
-    pdf_path = Path(os.getenv('DATA_DIR', '.')) / 'nutrition' / 'human-nutrition-text.pdf'
+    pdf_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'human-nutrition-text_ch1.pdf'
     reader = PDFReader()
     documents = reader.load_data(file=pdf_path)
     print()
@@ -107,13 +107,11 @@ if __name__ == '__main__':
     if documents:
         cprint(len(documents), c='red')
 
-        id = 1
-        for _ in range(2):
+        for id in range(1, 3):
             if id < len(documents):
                 cprint(id)
                 cprint(documents[id].text[:100])
                 cprint(documents[id].metadata)    
                 cprint(documents[id].id_)
                 cprint(documents[id].start_char_idx, documents[id].end_char_idx)
-                id += 1
             print()
