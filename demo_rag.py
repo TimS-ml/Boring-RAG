@@ -36,69 +36,20 @@ if documents:
 # NodeParser -> TextSplitter -> MetadataAwareTextSplitter -> SentenceSplitter
 
 # %%
-from spacy.lang.en import English
-nlp = English()
-nlp.add_pipe("sentencizer")
+from boring_rag_core.node_parser.text.sentence import SimpleSentenceSplitter
 
-# persudo code
-# https://docs.llamaindex.ai/en/stable/module_guides/loading/node_parsers/
-for doc in tqdm(documents):
-    # item is a dataclass with keys: text, metadata, id_, etc.
-    doc.sentences = list(nlp(doc.text).sents)
-
-    # Make sure all sentences are strings
-    doc.sentences = [str(sentence) for sentence in doc.sentences]
-
-    # Count the sentences
-    doc.metadata["page_sentence_count_spacy"] = len(doc.sentences)
-
-
-# random.sample(documents, k=1)
+splitter = SimpleSentenceSplitter.from_defaults()
 
 
 # %%[markdown]
-# Split to chunk 
+# Split to chunk (let's test doc 0)
 
 # %%
-# Define split size to turn groups of sentences into chunks
-num_sentence_chunk_size = 10
+tmp_doc = documents[5]
+tmp_chunks = splitter.split_text(tmp_doc.text)
+cprint(tmp_doc.text, tmp_doc.metadata)
+cprint(len(tmp_chunks), c='red')
+cprint(tmp_chunks[0].text, tmp_chunks[0].metadata)
 
-# Create a function that recursively splits a list into desired sizes
-def split_list(input_list: list,
-               slice_size: int) -> list[list[str]]:
-    """
-    Splits the input_list into sublists of size slice_size (or as close as possible).
+# import IPython; IPython.embed()
 
-    For example, a list of 17 sentences would be split into two lists of [[10], [7]]
-    """
-    return [input_list[i:i + slice_size] for i in range(0, len(input_list), slice_size)]
-
-
-# Loop through pages and texts and split sentences into chunks
-for item in tqdm(documents):
-    item["sentence_chunks"] = split_list(input_list=item["sentences"],
-                                         slice_size=num_sentence_chunk_size)
-    item["num_chunks"] = len(item["sentence_chunks"])
-
-
-# Split each chunk into its own item
-pages_and_chunks = []
-for item in tqdm(documents):
-    for sentence_chunk in item["sentence_chunks"]:
-        chunk_dict = {}
-        chunk_dict["page_number"] = item["page_number"]
-
-        # Join the sentences together into a paragraph-like structure, aka a chunk (so they are a single string)
-        joined_sentence_chunk = "".join(sentence_chunk).replace("  ", " ").strip()
-        joined_sentence_chunk = re.sub(r'\.([A-Z])', r'. \1', joined_sentence_chunk) # ".A" -> ". A" for any full-stop/capital letter combo
-        chunk_dict["sentence_chunk"] = joined_sentence_chunk
-
-        # Get stats about the chunk
-        chunk_dict["chunk_char_count"] = len(joined_sentence_chunk)
-        chunk_dict["chunk_word_count"] = len([word for word in joined_sentence_chunk.split(" ")])
-        chunk_dict["chunk_token_count"] = len(joined_sentence_chunk) / 4 # 1 token = ~4 characters
-
-        pages_and_chunks.append(chunk_dict)
-
-# How many chunks do we have?
-len(pages_and_chunks)

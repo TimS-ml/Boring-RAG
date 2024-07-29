@@ -150,9 +150,14 @@ if __name__ == '__main__':
 
     splitter = SimpleSentenceSplitter.from_defaults()
     
-    for doc in documents:
-        chunks = splitter.split_text(doc.text)
-        cprint(len(chunks), c='green')
-        # doc.chunks = chunks
-        # doc.metadata["num_chunks"] = len(chunks)
+    # for doc in documents:
+    #     chunks = splitter.split_text(doc.text)
+    #     cprint(len(chunks), c='green')
+    #     # doc.chunks = chunks
+    #     # doc.metadata["num_chunks"] = len(chunks)
 
+    tmp_doc = documents[5]
+    tmp_chunks = splitter.split_text(tmp_doc.text)
+    cprint(tmp_doc.text, tmp_doc.metadata)
+    cprint(len(tmp_chunks), c='red')
+    cprint(tmp_chunks[0].text, tmp_chunks[0].metadata)

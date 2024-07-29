@@ -8,8 +8,8 @@ Ref:
 
 
 # TODO
-- [ ] Preprocessing
-- [ ] Chunking
+- [x] Preprocessing
+- [x] Chunking
 - [ ] Embedding chunks
 - [ ] Save the embedding
 
@@ -22,4 +22,9 @@ Ref:
 - [ ] Generation
 
 - [ ] (extra) make the API similar to llama index
+
+
+# BUGs
+- [x] PDF doc needs post processing 
+- [ ] Chunking's metadata is not saved
 
