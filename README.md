@@ -26,5 +26,5 @@ Ref:
 
 # BUGs
 - [x] PDF doc needs post processing 
-- [ ] Chunking's metadata is not saved
+- [x] Chunking's metadata is not saved
 

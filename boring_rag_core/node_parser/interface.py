@@ -34,8 +34,12 @@ def build_nodes_from_splits(
 
 
 class TextSplitter(TransformComponent, ABC):
+    # @abstractmethod
+    # def split_text(self, text: str) -> Union[List[str], List[Document]]:
+    #     ...
+
     @abstractmethod
-    def split_text(self, text: str) -> Union[List[str], List[Document]]:
+    def split_text(self, input_data: Union[str, Document]) -> List[Document]:
         ...
 
     def split_texts(self, texts: List[str]) -> Union[List[str], List[Document]]:

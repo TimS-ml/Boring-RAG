@@ -1,0 +1,119 @@
+
+==================== PDF Import ====================
+
+[31m<module> -> len(documents):[0m
+52
+[93m<module> -> id:[0m
+1
+[93m<module> -> documents[id].text[:100]:[0m
+''
+[93m<module> -> documents[id].metadata:[0m
+{'file_name': 'human-nutrition-text_ch1.pdf',
+ 'page_char_count': 0,
+ 'page_label': '2',
+ 'page_number': 2,
+ 'page_sentence_count_raw': 1,
+ 'page_token_count': 0,
+ 'page_word_count': 0}
+[93m<module> -> documents[id].id_:[0m
+'a03c5ff2-6d12-4d94-8d82-9defe519d72d'
+[93m<module> -> documents[id].start_char_idx:[0m
+94
+[93m<module> -> documents[id].end_char_idx:[0m
+94
+
+[93m<module> -> id:[0m
+2
+[93m<module> -> documents[id].text[:100]:[0m
+('Image by Jim \n'
+ 'Hollyer / CC \n'
+ 'BY 4.0 \n'
+ 'Introduction \n'
+ 'UNIVERSITY OF HAWAI‘I AT MĀNOA FOOD SCIENCE AND HU')
+[93m<module> -> documents[id].metadata:[0m
+{'file_name': 'human-nutrition-text_ch1.pdf',
+ 'page_char_count': 261,
+ 'page_label': '3',
+ 'page_number': 3,
+ 'page_sentence_count_raw': 1,
+ 'page_token_count': 65,
+ 'page_word_count': 43}
+[93m<module> -> documents[id].id_:[0m
+'e3817b27-cbc2-4338-89a6-0836a7f22576'
+[93m<module> -> documents[id].start_char_idx:[0m
+94
+[93m<module> -> documents[id].end_char_idx:[0m
+355
+
+
+==================== Sentence Splitter ====================
+
+-------------------- doc node preview --------------------
+[93m<module> -> tmp_doc.text:[0m
+('down digestible complex carbohydrates to simple sugars, mostly \n'
+ 'glucose. Glucose is then transported to all our cells where it is \n'
+ 'stored, used to make energy, or used to build macromolecules. Fiber \n'
+ 'is also a complex carbohydrate, but it cannot be broken down by \n'
+ 'digestive enzymes in the human intestine. As a result, it passes \n'
+ 'through the digestive tract undigested unless the bacteria that \n'
+ 'inhabit the colon or large intestine break it down. \n'
+ 'One gram of digestible carbohydrates yields four kilocalories of \n'
+ 'energy for the cells in the body to perform work. In addition to \n'
+ 'providing energy and serving as building blocks for bigger \n'
+ 'macromolecules, carbohydrates are essential for proper functioning \n'
+ 'of the nervous system, heart, and kidneys. As mentioned, glucose \n'
+ 'can be stored in the body for future use. In humans, the storage \n'
+ 'molecule of carbohydrates is called glycogen, and in plants, it is \n'
+ 'known as starch. Glycogen and starch are complex carbohydrates. \n'
+ 'Lipids \n'
+ 'Lipids are also a family of molecules composed of carbon, hydrogen, \n'
+ 'and oxygen, but unlike carbohydrates, they are insoluble in water. \n'
+ 'Lipids are found predominantly in butter, oils, meats, dairy \n'
+ 'products, nuts, and seeds, and in many processed foods. The three \n'
+ 'main \n'
+ 'types \n'
+ 'of \n'
+ 'lipids \n'
+ 'are \n'
+ 'triglycerides \n'
+ '(triacylglycerols), \n'
+ 'phospholipids, and sterols. The main job of lipids is to provide or \n'
+ 'store energy. Lipids provide more energy per gram than \n'
+ 'carbohydrates (nine kilocalories per gram of lipids versus four \n'
+ 'kilocalories per gram of carbohydrates). In addition to energy \n'
+ 'storage, lipids serve as a major component of cell membranes, \n'
+ 'surround and protect organs (in fat-storing tissues), provide \n'
+ 'insulation to aid in temperature regulation, and regulate many other \n'
+ 'functions in the body. \n'
+ '6  |  Introduction\n')
+[93m<module> -> tmp_doc.metadata:[0m
+{'file_name': 'human-nutrition-text_ch1.pdf',
+ 'page_char_count': 1807,
+ 'page_label': '6',
+ 'page_number': 6,
+ 'page_sentence_count_raw': 16,
+ 'page_token_count': 451,
+ 'page_word_count': 276}
+
+
+-------------------- separator node preview --------------------
+[31m<module> -> len(tmp_chunks):[0m
+2
+[93m<module> -> tmp_chunks[0].text:[0m
+('down digestible complex carbohydrates to simple sugars, mostly glucose. '
+ 'Glucose is then transported to all our cells where it is stored, used to '
+ 'make energy, or used to build macromolecules. Fiber is also a complex '
+ 'carbohydrate, but it cannot be broken down by digestive enzymes in the human '
+ 'intestine. As a result, it passes through the digestive tract undigested '
+ 'unless the bacteria that inhabit the colon or large intestine break it down. '
+ 'One gram of digestible carbohydrates yields four kilocalories of energy for '
+ 'the cells in the body to perform work. In addition to providing energy and '
+ 'serving as building blocks for bigger macromolecules, carbohydrates are '
+ 'essential for proper functioning of the nervous system, heart, and kidneys. '
+ 'As mentioned, glucose can be stored in the body for future use. In humans, '
+ 'the storage molecule of carbohydrates is called glycogen, and in plants, it '
+ 'is known as starch. Glycogen and starch are complex carbohydrates. Lipids '
+ 'Lipids are also a family of molecules composed of carbon, hydrogen, and '
+ 'oxygen, but unlike carbohydrates, they are insoluble in water.')
+[93m<module> -> tmp_chunks[0].metadata:[0m
+{'chunk_char_count': 1100, 'chunk_token_count': 275, 'chunk_word_count': 175}
