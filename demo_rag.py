@@ -71,5 +71,10 @@ for id in range(2):
 
 cprint(tmp_chunks[0].start_char_idx == tmp_doc.start_char_idx)
 
+# %%[markdown]
+# Embeddings
+# Checkout `llama-index-integrations/embeddings/llama-index-embeddings-huggingface/`
+
+# %%
 # import IPython; IPython.embed()
 
