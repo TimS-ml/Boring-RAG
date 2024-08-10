@@ -78,7 +78,6 @@ class TransformComponent(ABC):
         data = self.to_dict(**kwargs)
         return json.dumps(data)
 
-    # TODO: return type here not supported by current mypy version
     @classmethod
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
         if isinstance(kwargs, dict):

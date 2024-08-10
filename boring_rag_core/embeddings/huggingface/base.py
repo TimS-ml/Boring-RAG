@@ -1,3 +1,4 @@
+from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import (
     List, 
@@ -23,8 +24,8 @@ DEFAULT_QUERY_INSTRUCTION = "Represent the question for retrieving supporting do
 DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_EMBED_BATCH_SIZE = 32
 
-
 Embedding = List[float]
+
 
 class SimilarityMode(str, Enum):
     """Modes for similarity/distance."""
@@ -32,9 +33,11 @@ class SimilarityMode(str, Enum):
     DOT_PRODUCT = "dot_product"
     EUCLIDEAN = "euclidean"
 
+
 def mean_agg(embeddings: List[Embedding]) -> Embedding:
     """Mean aggregation for embeddings."""
     return np.array(embeddings).mean(axis=0).tolist()
+
 
 def similarity(
     embedding1: Embedding,
@@ -50,6 +53,7 @@ def similarity(
         product = np.dot(embedding1, embedding2)
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
         return product / norm
+
 
 class BaseEmbedding(TransformComponent, ABC):
     model_name: str
@@ -130,19 +134,19 @@ class HuggingFaceEmbedding(BaseEmbedding):
         self._model = SentenceTransformer(model_name, device=self._device)
         self._model.max_seq_length = max_length
 
-    def _get_query_embedding(self, query: str) -> List[float]:
+    def _get_query_embedding(self, query: str) -> Embedding:
         embeddings = self._model.encode([query], 
                                         normalize_embeddings=self.normalize,
                                         batch_size=1)
         return embeddings[0].tolist()
 
-    def _get_text_embedding(self, text: str) -> List[float]:
+    def _get_text_embedding(self, text: str) -> Embedding:
         embeddings = self._model.encode([text], 
                                         normalize_embeddings=self.normalize,
                                         batch_size=1)
         return embeddings[0].tolist()
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         embeddings = self._model.encode(texts, 
                                         normalize_embeddings=self.normalize,
                                         batch_size=self.embed_batch_size)
@@ -160,3 +164,19 @@ class HuggingFaceEmbedding(BaseEmbedding):
     @classmethod
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
+
+
+if __name__ == '__main__':
+    import os
+    from boring_utils.utils import cprint
+    from boring_rag_core.readers.base import PDFReader
+
+    pdf_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'human-nutrition-text_ch1.pdf'
+    reader = PDFReader()
+    documents = reader.load_data(file=pdf_path)
+    cprint(len(documents), c='red')
+    cprint(documents[0].metadata)    
+
+    embedding = HuggingFaceEmbedding()
+    documents = embedding.embed_documents(documents)
+    cprint(documents[0].embedding)
