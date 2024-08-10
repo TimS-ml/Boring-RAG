@@ -170,6 +170,7 @@ if __name__ == '__main__':
     import os
     from boring_utils.utils import cprint
     from boring_rag_core.readers.base import PDFReader
+    from boring_rag_core.embeddings.utils import save_embedding
 
     pdf_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'human-nutrition-text_ch1.pdf'
     reader = PDFReader()
@@ -180,3 +181,7 @@ if __name__ == '__main__':
     embedding = HuggingFaceEmbedding()
     documents = embedding.embed_documents(documents)
     cprint(documents[0].embedding)
+
+    embed_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'test_embed.txt'
+    save_embedding(documents[0].embedding, embed_path)
+
