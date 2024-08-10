@@ -17,11 +17,12 @@ from boring_rag_core.schema import Document, TransformComponent
 from boring_utils.utils import cprint, tprint
 
 
-DEFAULT_EMBEDDING_MODEL = "BAAI/bge-small-en"
+# DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2" ~438M
+# DEFAULT_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5" ~134M
+DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # ~70M
 DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
 DEFAULT_QUERY_INSTRUCTION = "Represent the question for retrieving supporting documents: "
 
-DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_EMBED_BATCH_SIZE = 32
 
 Embedding = List[float]
@@ -117,7 +118,7 @@ class BaseEmbedding(TransformComponent, ABC):
 class HuggingFaceEmbedding(BaseEmbedding):
     def __init__(
         self,
-        model_name: str = DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
+        model_name: str = DEFAULT_EMBEDDING_MODEL,
         max_length: int = 512,
         normalize: bool = True,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
@@ -168,7 +169,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
 if __name__ == '__main__':
     import os
-    from boring_utils.utils import cprint
+    from boring_utils.utils import cprint, tprint
     from boring_rag_core.readers.base import PDFReader
     from boring_rag_core.embeddings.utils import save_embedding
 
@@ -178,10 +179,20 @@ if __name__ == '__main__':
     cprint(len(documents), c='red')
     cprint(documents[0].metadata)    
 
+    tprint('Calc Embedding')
     embedding = HuggingFaceEmbedding()
     documents = embedding.embed_documents(documents)
     cprint(documents[0].embedding)
+    cprint(documents[0].metadata)
 
-    embed_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'test_embed.txt'
-    save_embedding(documents[0].embedding, embed_path)
+    tprint('Calc Similarity')
+    sim = similarity(
+            documents[0].embedding,
+            documents[1].embedding,
+            )
+    cprint(sim)
+
+    # # test save
+    # embed_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'test_embed.txt'
+    # save_embedding(documents[0].embedding, embed_path)
 

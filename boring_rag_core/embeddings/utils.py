@@ -28,8 +28,24 @@ def load_embedding(file_path: str) -> List[float]:
 if __name__ == '__main__':
     import os
     from boring_utils.utils import cprint
+    from boring_rag_core.readers.base import PDFReader
+    from boring_rag_core.embeddings.huggingface import HuggingFaceEmbedding
+    from boring_rag_core.embeddings.utils import save_embedding
 
-    # run ./huggingface/base.py first
+    pdf_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'human-nutrition-text_ch1.pdf'
+    reader = PDFReader()
+    documents = reader.load_data(file=pdf_path)
+    cprint(len(documents), c='red')
+    cprint(documents[0].metadata)    
+
+    embedding = HuggingFaceEmbedding()
+    documents = embedding.embed_documents(documents)
+    cprint(documents[0].embedding)
+
+    # test save
     embed_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'test_embed.txt'
+    save_embedding(documents[0].embedding, embed_path)
+
+    # test load
     embedding = load_embedding(embed_path)
     cprint(embedding)

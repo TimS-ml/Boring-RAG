@@ -50,6 +50,9 @@ splitter = SimpleSentenceSplitter.from_defaults()
 
 # %%[markdown]
 # Split to chunk (let's test doc 0)
+# [Chunking Strategies for LLM Applications | Pinecone](https://www.pinecone.io/learn/chunking-strategies/)
+# [MTEB Leaderboard - a Hugging Face Space by mteb](https://huggingface.co/spaces/mteb/leaderboard)
+# [Text Splitters | 🦜️🔗 LangChain](https://python.langchain.com/v0.1/docs/modules/data_connection/document_transformers/)
 
 # %%
 tmp_doc = documents[5]
