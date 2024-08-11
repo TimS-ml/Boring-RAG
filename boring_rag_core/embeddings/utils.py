@@ -39,7 +39,7 @@ if __name__ == '__main__':
     cprint(documents[0].metadata)    
 
     embedding = HuggingFaceEmbedding()
-    documents = embedding.embed_documents(documents)
+    documents = embedding.embed_documents(documents[:3])
     cprint(documents[0].embedding)
 
     # test save

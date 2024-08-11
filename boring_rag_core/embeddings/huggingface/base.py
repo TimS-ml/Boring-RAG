@@ -9,20 +9,18 @@ from typing import (
 from abc import ABC, abstractmethod
 from enum import Enum
 import numpy as np
-
 import torch
 from sentence_transformers import SentenceTransformer
 
 from boring_rag_core.schema import Document, TransformComponent
-from boring_utils.utils import cprint, tprint
+from boring_utils.utils import cprint, tprint, get_device
 
 
-# DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2" ~438M
-# DEFAULT_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5" ~134M
-DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # ~70M
+# DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2" ~438M
+# DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5" ~134M
+DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # ~70M
 DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
 DEFAULT_QUERY_INSTRUCTION = "Represent the question for retrieving supporting documents: "
-
 DEFAULT_EMBED_BATCH_SIZE = 32
 
 Embedding = List[float]
@@ -61,23 +59,31 @@ class BaseEmbedding(TransformComponent, ABC):
     embed_batch_size: int
 
     @abstractmethod
-    def _get_query_embedding(self, query: str) -> Embedding:
+    def _embed(
+        self,
+        sentences: List[str],
+        prompt_name: Optional[str] = None,
+    ) -> List[List[float]]:
+        """Embed sentences."""
+
+    @abstractmethod
+    def get_query_embedding(self, query: str) -> Embedding:
         """Embed the input query."""
 
     @abstractmethod
-    def _get_text_embedding(self, text: str) -> Embedding:
+    def get_text_embedding(self, text: str) -> Embedding:
         """Embed the input text."""
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+    def get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         """Embed the input sequence of text."""
-        return [self._get_text_embedding(text) for text in texts]
+        return [self.get_text_embedding(text) for text in texts]
 
     def get_text_embedding_batch(self, texts: List[str], **kwargs: Any) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
         results = []
         for i in range(0, len(texts), self.embed_batch_size):
             batch = texts[i:i + self.embed_batch_size]
-            results.extend(self._get_text_embeddings(batch))
+            results.extend(self.get_text_embeddings(batch))
         return results
 
     def get_agg_embedding_from_queries(
@@ -86,7 +92,7 @@ class BaseEmbedding(TransformComponent, ABC):
         agg_fn: Optional[callable] = None,
     ) -> Embedding:
         """Get aggregated embedding from multiple queries."""
-        query_embeddings = [self._get_query_embedding(query) for query in queries]
+        query_embeddings = [self.get_query_embedding(query) for query in queries]
         agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 
@@ -114,48 +120,79 @@ class BaseEmbedding(TransformComponent, ABC):
         """Get class name."""
         return cls.__name__
 
+    @abstractmethod
+    def embed_documents(self, documents: List[Document]) -> List[Document]:
+        """Embed a list of documents."""
+
+
 
 class HuggingFaceEmbedding(BaseEmbedding):
+    """
+    ref:
+        https://www.sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html
+    """
     def __init__(
         self,
-        model_name: str = DEFAULT_EMBEDDING_MODEL,
+        model_name: str = DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
         max_length: int = 512,
         normalize: bool = True,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        query_instruction: Optional[str] = None,
+        text_instruction: Optional[str] = None,
+        cache_folder: Optional[str] = None,
+        trust_remote_code: bool = False,
         device: Optional[str] = None,
-        **kwargs: Any,
+        **model_kwargs,
     ):
         super().__init__()
         self.model_name = model_name
         self.max_length = max_length
         self.normalize = normalize
         self.embed_batch_size = embed_batch_size
-        self._device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
+        self._device = device if device else get_device(return_str=True)
         
-        self._model = SentenceTransformer(model_name, device=self._device)
+        # NOTE: get_query_instruct_for_model_name mainly for INSTRUCTOR_MODELS detection
+        self._model = SentenceTransformer(
+                    model_name, 
+                    trust_remote_code=trust_remote_code,
+                    device=self._device,
+                    cache_folder=cache_folder,
+                    prompts={
+                        "query": query_instruction,
+                        "text": text_instruction,
+                    },
+                    **model_kwargs,
+                )
         self._model.max_seq_length = max_length
 
-    def _get_query_embedding(self, query: str) -> Embedding:
-        embeddings = self._model.encode([query], 
-                                        normalize_embeddings=self.normalize,
-                                        batch_size=1)
-        return embeddings[0].tolist()
+    def _embed(
+        self,
+        sentences: List[str],
+        prompt_name: Optional[str] = None,
+    ) -> List[List[float]]:
+        """Embed sentences."""
+        return self._model.encode(
+            sentences,
+            batch_size=self.embed_batch_size,
+            prompt_name=prompt_name,
+            normalize_embeddings=self.normalize,
+        ).tolist()
 
-    def _get_text_embedding(self, text: str) -> Embedding:
-        embeddings = self._model.encode([text], 
-                                        normalize_embeddings=self.normalize,
-                                        batch_size=1)
-        return embeddings[0].tolist()
+    def get_query_embedding(self, query: str, prompt_name="query") -> Embedding:
+        embeddings = self._embed([query], prompt_name=prompt_name)[0]
+        return embeddings
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        embeddings = self._model.encode(texts, 
-                                        normalize_embeddings=self.normalize,
-                                        batch_size=self.embed_batch_size)
-        return embeddings.tolist()
+    def get_text_embedding(self, text: str) -> Embedding:
+        embeddings = self._embed([text])[0]
+        return embeddings
+
+    def get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        embeddings = self._embed(texts)
+        return embeddings
 
     def embed_documents(self, documents: List[Document]) -> List[Document]:
         texts = [doc.text for doc in documents]
-        embeddings = self._get_text_embeddings(texts)
+        embeddings = self.get_text_embeddings(texts)
         
         for doc, embedding in zip(documents, embeddings):
             doc.embedding = embedding
@@ -171,7 +208,6 @@ if __name__ == '__main__':
     import os
     from boring_utils.utils import cprint, tprint
     from boring_rag_core.readers.base import PDFReader
-    from boring_rag_core.embeddings.utils import save_embedding
 
     pdf_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'human-nutrition-text_ch1.pdf'
     reader = PDFReader()
@@ -179,18 +215,27 @@ if __name__ == '__main__':
     cprint(len(documents), c='red')
     cprint(documents[0].metadata)    
 
-    tprint('Calc Embedding')
     embedding = HuggingFaceEmbedding()
-    documents = embedding.embed_documents(documents)
-    cprint(documents[0].embedding)
+
+    tprint('Single Query Embedding')
+    query_embed = embedding.get_text_embedding("Tell me something about nutrition.")
+    cprint(query_embed[:5])
+
+    tprint('Calc Embedding')
+    documents = embedding.embed_documents(documents[:3])  # just to speed the things up...
+    cprint(documents[0].embedding[:5])
     cprint(documents[0].metadata)
 
     tprint('Calc Similarity')
-    sim = similarity(
-            documents[0].embedding,
-            documents[1].embedding,
-            )
-    cprint(sim)
+    query_embed_sim_0 = embedding.similarity(
+           query_embed,
+           documents[0].embedding,
+           )
+    query_embed_sim_1 = embedding.similarity(
+           query_embed,
+           documents[1].embedding,
+           )
+    cprint(query_embed_sim_0, query_embed_sim_1)
 
     # # test save
     # embed_path = Path(os.getenv('DATA_DIR')) / 'nutrition' / 'test_embed.txt'
