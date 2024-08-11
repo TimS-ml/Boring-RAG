@@ -15,15 +15,12 @@ class Pooling(str, Enum):
 
     @classmethod
     def cls_pooling(cls, array: np.ndarray) -> np.ndarray:
-        # 实现CLS池化
         pass
 
     @classmethod
     def mean_pooling(cls, array: np.ndarray) -> np.ndarray:
-        # 实现平均池化
         pass
 
     @classmethod
     def last_pooling(cls, array: np.ndarray) -> np.ndarray:
-        # 实现最后一个token池化
         pass

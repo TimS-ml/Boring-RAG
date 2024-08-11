@@ -12,9 +12,11 @@ import numpy as np
 import torch
 from sentence_transformers import SentenceTransformer
 
+from boring_rag_core.embeddings.base import BaseEmbedding
 from boring_rag_core.schema import Document, TransformComponent
 from boring_utils.utils import cprint, tprint, get_device
 
+Embedding = List[float]
 
 # DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2" ~438M
 # DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5" ~134M
@@ -22,108 +24,6 @@ DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  
 DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
 DEFAULT_QUERY_INSTRUCTION = "Represent the question for retrieving supporting documents: "
 DEFAULT_EMBED_BATCH_SIZE = 32
-
-Embedding = List[float]
-
-
-class SimilarityMode(str, Enum):
-    """Modes for similarity/distance."""
-    DEFAULT = "cosine"
-    DOT_PRODUCT = "dot_product"
-    EUCLIDEAN = "euclidean"
-
-
-def mean_agg(embeddings: List[Embedding]) -> Embedding:
-    """Mean aggregation for embeddings."""
-    return np.array(embeddings).mean(axis=0).tolist()
-
-
-def similarity(
-    embedding1: Embedding,
-    embedding2: Embedding,
-    mode: SimilarityMode = SimilarityMode.DEFAULT,
-) -> float:
-    """Get embedding similarity."""
-    if mode == SimilarityMode.EUCLIDEAN:
-        return -float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
-    elif mode == SimilarityMode.DOT_PRODUCT:
-        return np.dot(embedding1, embedding2)
-    else:
-        product = np.dot(embedding1, embedding2)
-        norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
-        return product / norm
-
-
-class BaseEmbedding(TransformComponent, ABC):
-    model_name: str
-    embed_batch_size: int
-
-    @abstractmethod
-    def _embed(
-        self,
-        sentences: List[str],
-        prompt_name: Optional[str] = None,
-    ) -> List[List[float]]:
-        """Embed sentences."""
-
-    @abstractmethod
-    def get_query_embedding(self, query: str) -> Embedding:
-        """Embed the input query."""
-
-    @abstractmethod
-    def get_text_embedding(self, text: str) -> Embedding:
-        """Embed the input text."""
-
-    def get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        """Embed the input sequence of text."""
-        return [self.get_text_embedding(text) for text in texts]
-
-    def get_text_embedding_batch(self, texts: List[str], **kwargs: Any) -> List[Embedding]:
-        """Get a list of text embeddings, with batching."""
-        results = []
-        for i in range(0, len(texts), self.embed_batch_size):
-            batch = texts[i:i + self.embed_batch_size]
-            results.extend(self.get_text_embeddings(batch))
-        return results
-
-    def get_agg_embedding_from_queries(
-        self,
-        queries: List[str],
-        agg_fn: Optional[callable] = None,
-    ) -> Embedding:
-        """Get aggregated embedding from multiple queries."""
-        query_embeddings = [self.get_query_embedding(query) for query in queries]
-        agg_fn = agg_fn or mean_agg
-        return agg_fn(query_embeddings)
-
-    def similarity(
-        self,
-        embedding1: Embedding,
-        embedding2: Embedding,
-        mode: SimilarityMode = SimilarityMode.DEFAULT,
-    ) -> float:
-        """Get embedding similarity."""
-        return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
-
-    def __call__(self, nodes: List[Document], **kwargs: Any) -> List[Document]:
-        """Transform nodes by adding embeddings."""
-        embeddings = self.get_text_embedding_batch(
-            [node.text for node in nodes],
-            **kwargs,
-        )
-        for node, embedding in zip(nodes, embeddings):
-            node.embedding = embedding
-        return nodes
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return cls.__name__
-
-    @abstractmethod
-    def embed_documents(self, documents: List[Document]) -> List[Document]:
-        """Embed a list of documents."""
-
 
 
 class HuggingFaceEmbedding(BaseEmbedding):
@@ -137,8 +37,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         max_length: int = 512,
         normalize: bool = True,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-        query_instruction: Optional[str] = None,
-        text_instruction: Optional[str] = None,
+        query_instruction: Optional[str] = DEFAULT_QUERY_INSTRUCTION,
+        text_instruction: Optional[str] = DEFAULT_EMBED_INSTRUCTION,
         cache_folder: Optional[str] = None,
         trust_remote_code: bool = False,
         device: Optional[str] = None,
@@ -151,7 +51,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         self.embed_batch_size = embed_batch_size
         self._device = device if device else get_device(return_str=True)
         
-        # NOTE: get_query_instruct_for_model_name mainly for INSTRUCTOR_MODELS detection
+        # NOTE: in llama_index, get_query_instruct_for_model_name mainly for INSTRUCTOR / BGE detection
+        #       but we will skip that for now 
         self._model = SentenceTransformer(
                     model_name, 
                     trust_remote_code=trust_remote_code,

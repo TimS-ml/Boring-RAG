@@ -79,5 +79,37 @@ cprint(tmp_chunks[0].start_char_idx == tmp_doc.start_char_idx)
 # Checkout `llama-index-integrations/embeddings/llama-index-embeddings-huggingface/`
 
 # %%
+from boring_rag_core.embeddings.huggingface.base import HuggingFaceEmbedding
+
+embedding = HuggingFaceEmbedding()
+documents = splitter.split_text(documents[0])  # only split chunk 0 for now
+
+tprint('Single Query Embedding')
+query_embed = embedding.get_text_embedding("Tell me something about nutrition.")
+cprint(query_embed[:5])
+
+tprint('Calc Embedding', sep='-')
+documents = embedding.embed_documents(documents[:3])  # just to speed the things up...
+cprint(documents[0].embedding[:5])
+cprint(documents[0].metadata)
+
+tprint('Calc Similarity', sep='-')
+query_embed_sim_0 = embedding.similarity(
+       query_embed,
+       documents[0].embedding,
+       )
+query_embed_sim_1 = embedding.similarity(
+       query_embed,
+       documents[1].embedding,
+       )
+cprint(query_embed_sim_0, query_embed_sim_1)
+
+
+
+# %%
 # import IPython; IPython.embed()
 
+# %%[markdown]
+# Indexing
+# Basically we pack SentenceSplitter and HuggingFaceEmbedding together into IngestionPipeline._get_default_transformations
+# VectorStoreIndex.from_documents -> as_query_engine / as_chat_engine / as_retriever

@@ -8,20 +8,21 @@ Ref:
 
 
 # TODO
-- [x] Preprocessing
-- [x] Chunking
-- [ ] Embedding chunks
-- [ ] Save the embedding
+- [x] Preprocessing + PDF Reader
+- [x] Chunking, SentenceSplit
+- [x] Embedding chunks
+- [x] Save the embedding
+- [x] Similarity Search
+- [ ] (TBD) Embedding pooling
 
-- [ ] Similarity Search
+- [ ] BaseIndex Draft
+- [ ] Ingestion Pipeline: Pack into splitter and embedding into IngestionPipeline
+- [ ] Storage Context
 
 - [ ] Retrieval
-
-- [ ] Agumentation
-
 - [ ] Generation
 
-- [ ] (extra) make the API similar to llama index
+- [ ] Re-org demo_rag.py
 
 
 # BUGs
