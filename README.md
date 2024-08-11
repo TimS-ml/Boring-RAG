@@ -28,4 +28,4 @@ Ref:
 # BUGs
 - [x] PDF doc needs post processing 
 - [x] Chunking's metadata is not saved
-
+- [x] Pydantic requires 1.10.14

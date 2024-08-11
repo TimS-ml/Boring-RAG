@@ -7,8 +7,9 @@ from typing import (
     List,
     Optional,
     List, 
+    Sequence,
     Callable,
-    Union
+    Union,
 )
 
 from boring_rag_core.node_parser.text.sentence import SimpleSentenceSplitter
@@ -37,13 +38,13 @@ class IngestionPipeline(BaseModel):
     def run(self, documents: Sequence[Document]) -> List[Document]:
         processed_docs = []
         for doc in documents:
-            processed_doc = doc
+            current_docs = [doc]
             for transform in self.transformations:
                 if isinstance(transform, SimpleSentenceSplitter):
-                    processed_doc = transform.split_text(processed_doc)
+                    current_docs = transform.split_text(current_docs[0])
                 elif isinstance(transform, HuggingFaceEmbedding):
-                    processed_doc = transform.embed_documents([processed_doc])[0]
-            processed_docs.extend(processed_doc if isinstance(processed_doc, list) else [processed_doc])
+                    current_docs = transform.embed_documents(current_docs)
+            processed_docs.extend(current_docs)
         return processed_docs
 
     def get_query_embedding(self, query: str) -> List[float]:
@@ -92,7 +93,7 @@ if __name__ == '__main__':
     documents = reader.load_data(file=pdf_path)
     
     pipeline = IngestionPipeline()
-    processed_documents = pipeline.run(documents)
+    processed_documents = pipeline.run(documents)  # TODO: fix this line
     
     # Get query embedding
     query = "Tell me something about nutrition."
