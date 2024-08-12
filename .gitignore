@@ -6,31 +6,13 @@
 *.pt
 *.pyc
 *.bk
+*.vim
+
 input.txt
 replace.sh
 
 Quick*.*
 Temp*.*
-
-data/nutrition/*
-!data/nutrition/readme.md
-!data/nutrition/prepare.py
-
-data/openwebtext/*
-!data/openwebtext/readme.md
-!data/openwebtext/prepare.py
-
-data/shakespeare/*
-!data/shakespeare/readme.md
-!data/shakespeare/prepare.py
-
-data/shakespeare_char/*
-!data/shakespeare_char/readme.md
-!data/shakespeare_char/prepare.py
-
-data/pdb/*
-!data/pdb/readme.md
-!data/pdb/prepare.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -39,6 +39,7 @@ class IngestionPipeline(BaseModel):
         processed_docs = []
         for doc in documents:
             current_docs = [doc]
+            # TODO: support more transformations
             for transform in self.transformations:
                 if isinstance(transform, SimpleSentenceSplitter):
                     current_docs = transform.split_text(current_docs[0])
