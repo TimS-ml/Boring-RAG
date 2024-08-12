@@ -18,7 +18,7 @@ from boring_rag_core.schema import Document, TransformComponent
 
 # TODO: revisit this after implementing boring_rag_core.vector_store.base
 # from boring_rag_core.vector_store.base import BaseVectorStore
-BaseVectorStore = None
+BaseVectorStore = Any
 
 
 def run_transformations(
