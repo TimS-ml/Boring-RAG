@@ -5,9 +5,8 @@ from pydantic import BaseModel, Field
 from boring_rag_core.schema import Document, TransformComponent
 from boring_rag_core.ingestion.pipeline import IngestionPipeline
 
-# TODO:
-# from boring_rag_core.storage.storage_context import StorageContext
-StorageContext = Any
+# StorageContext: includes BaseIndexStore, BaseVectorStore, ...
+from boring_rag_core.storage.storage_context import StorageContext
 
 
 class BaseIndex(ABC, BaseModel):
@@ -55,16 +54,16 @@ class BaseIndex(ABC, BaseModel):
     def query(self, query_str: str, **query_kwargs: Any) -> Any:
         """Query the index."""
 
-    def get_document(self, doc_id: str) -> Optional[Document]:
-        """Retrieve a document from the index by its ID."""
-        return self.storage_context.docstore.get(doc_id)
-
-    def persist(self, persist_dir: str):
-        """Persist the index to disk."""
-        self.storage_context.persist(persist_dir)
-
-    @classmethod
-    def load(cls, load_dir: str):
-        """Load the index from disk."""
-        storage_context = StorageContext.load(load_dir)
-        return cls(storage_context=storage_context)
+    # def get_document(self, doc_id: str) -> Optional[Document]:
+    #     """Retrieve a document from the index by its ID."""
+    #     return self.storage_context.docstore.get(doc_id)
+    # 
+    #  def persist(self, persist_dir: str):
+    #      """Persist the index to disk."""
+    #      self.storage_context.persist(persist_dir)
+    #
+    #  @classmethod
+    #  def load(cls, load_dir: str):
+    #      """Load the index from disk."""
+    #      storage_context = StorageContext.from_persist_dir(load_dir)
+    #      return cls(storage_context=storage_context)
