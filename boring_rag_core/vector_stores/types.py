@@ -1,7 +1,13 @@
-from typing import List, Dict, Any, Optional, Literal
+from typing import (
+    List, 
+    Dict, 
+    Optional, 
+    Union,
+)
 from boring_rag_core.schema import Document
 from enum import Enum
 from pydantic import BaseModel, Field
+from dataclasses import dataclass, field
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
@@ -59,23 +65,12 @@ class FilterCondition(str, Enum):
 
 class MetadataFilter(BaseModel):
     """Comprehensive metadata filter for vector stores to support more operators.
-
-    Value uses Strict* types, as int, float and str are compatible types and were all
-    converted to string before.
-
-    See: https://docs.pydantic.dev/latest/usage/types/#strict-types
+    Llama Index using strict types: https://docs.pydantic.dev/latest/usage/types/#strict-types
     """
 
     key: str
     value: Optional[
-        Union[
-            StrictInt,
-            StrictFloat,
-            StrictStr,
-            List[StrictStr],
-            List[StrictFloat],
-            List[StrictInt],
-        ]
+        Union[int, float, str, List[int], List[float], List[str]]
     ]
     operator: FilterOperator = FilterOperator.EQ
 
@@ -84,12 +79,6 @@ class MetadataFilter(BaseModel):
         cls,
         filter_dict: Dict,
     ) -> "MetadataFilter":
-        """Create MetadataFilter from dictionary.
-
-        Args:
-            filter_dict: Dict with key, value and operator.
-
-        """
         return MetadataFilter.parse_obj(filter_dict)
 
 
@@ -97,7 +86,7 @@ class MetadataFilters(BaseModel):
     """Metadata filters for vector stores."""
 
     # Exact match filters and Advanced filters with operators like >, <, >=, <=, !=, etc.
-    filters: List[Union[MetadataFilter, ExactMatchFilter, "MetadataFilters"]]
+    filters: List[Union[MetadataFilter, "MetadataFilters"]]
     # and/or such conditions for combining different filters
     condition: Optional[FilterCondition] = FilterCondition.AND
 

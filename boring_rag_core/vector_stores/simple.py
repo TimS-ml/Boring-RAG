@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 import numpy as np
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Callable
 from boring_rag_core.schema import Document
 from dataclasses import dataclass, field, asdict
 
@@ -14,8 +14,8 @@ from boring_rag_core.vector_stores.types import (
     VectorStoreQuery, 
     VectorStoreQueryResult, 
     VectorStoreQueryMode,
-    FilterOperator,
-    MetadataFilter
+    FilterOperator, FilterCondition,
+    MetadataFilter, MetadataFilters
 )
 
 LEARNER_MODES = {
@@ -24,6 +24,55 @@ LEARNER_MODES = {
     VectorStoreQueryMode.LOGISTIC_REGRESSION,
 }
 MMR_MODE = VectorStoreQueryMode.MMR
+
+
+def _build_metadata_filter_fn(
+    filters: Optional[MetadataFilters] = None,
+) -> Callable[[Dict[str, Any]], bool]:
+    """Build a filter function based on MetadataFilters."""
+    if not filters:
+        return lambda _: True
+
+    def filter_fn(metadata: Dict[str, Any]) -> bool:
+        for filter in filters.filters:
+            if not _apply_single_filter(metadata, filter):
+                if filters.condition == FilterCondition.AND:
+                    return False
+            else:
+                if filters.condition == FilterCondition.OR:
+                    return True
+        return filters.condition == FilterCondition.AND
+
+    return filter_fn
+
+def _apply_single_filter(metadata: Dict[str, Any], filter: MetadataFilter) -> bool:
+    """Apply a single MetadataFilter."""
+    value = metadata.get(filter.key)
+    if value is None:
+        return False
+
+    if filter.operator == FilterOperator.EQ:
+        return value == filter.value
+    elif filter.operator == FilterOperator.NE:
+        return value != filter.value
+    elif filter.operator == FilterOperator.GT:
+        return value > filter.value
+    elif filter.operator == FilterOperator.GTE:
+        return value >= filter.value
+    elif filter.operator == FilterOperator.LT:
+        return value < filter.value
+    elif filter.operator == FilterOperator.LTE:
+        return value <= filter.value
+    elif filter.operator == FilterOperator.IN:
+        return value in filter.value
+    elif filter.operator == FilterOperator.NIN:
+        return value not in filter.value
+    elif filter.operator == FilterOperator.CONTAINS:
+        return filter.value in value
+    # elif filter.operator == FilterOperator.NOT_CONTAINS:
+    #     return filter.value not in value
+    else:
+        raise ValueError(f"Unsupported filter operator: {filter.operator}")
 
 
 @dataclass
@@ -37,6 +86,10 @@ class SimpleVectorStoreData:
 
 
 class SimpleVectorStore:
+    """
+    ref:
+        https://docs.llamaindex.ai/en/stable/examples/low_level/vector_store/
+    """
     def __init__(self, data: Optional[SimpleVectorStoreData] = None):
         self.data = data or SimpleVectorStoreData()
 
@@ -82,39 +135,6 @@ class SimpleVectorStore:
         """Create a vector store from a dictionary."""
         return cls(SimpleVectorStoreData(**data))
 
-    # def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-    #     """Query the vector store for similar documents."""
-    #
-    #     def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
-    #         """Calculate cosine similarity between two vectors."""
-    #         vec1 = np.array(vec1)
-    #         vec2 = np.array(vec2)
-    #         return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
-    #
-    #     if query.query_embedding is None:
-    #         raise ValueError("Query embedding is required.")
-    #
-    #     scores = []
-    #     for node_id, node in self.data.items():
-    #         if node.embedding is not None:
-    #             score = _cosine_similarity(query.query_embedding, node.embedding)
-    #             scores.append((node_id, score, node))
-    #
-    #     scores.sort(key=lambda x: x[1], reverse=True)
-    #     top_k = min(query.similarity_top_k, len(scores))
-    #     top_results = scores[:top_k]
-    #
-    #     nodes = [result[2] for result in top_results]
-    #     similarities = [result[1] for result in top_results]
-    #     ids = [result[0] for result in top_results]
-    #     # metadata = self.data.metadata_dict.get(node_id, {})
-    #
-    #     return VectorStoreQueryResult(
-    #         nodes=nodes,
-    #         similarities=similarities,
-    #         ids=ids
-    #     )
-
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query the vector store."""
         if query.query_embedding is None:
@@ -154,51 +174,36 @@ class SimpleVectorStore:
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
 
     def _apply_filters(self, query: VectorStoreQuery) -> Tuple[List[str], List[List[float]]]:
-        """Apply filters to the vector store data."""
+        """
+        Apply filter[s] to the vector store metadata.
+        The source code of MetadataFilter includes key, value, and operator. 
+        For example, the metadata we want to filter is internal_score=3 in the metadata_dict
+        """
         filtered_ids = []
         filtered_embeddings = []
 
+        filter_fn = _build_metadata_filter_fn(query.filters)
+
         for node_id, embedding in self.data.embedding_dict.items():
-            if self._check_filters(node_id, query):
+            if self._check_filters(node_id, query, filter_fn):
                 filtered_ids.append(node_id)
                 filtered_embeddings.append(embedding)
 
         return filtered_ids, filtered_embeddings
 
-    def _check_filters(self, node_id: str, query: VectorStoreQuery) -> bool:
-        """Check if a node passes all filters."""
+    def _check_filters(
+            self, 
+            node_id: str, 
+            query: VectorStoreQuery, 
+            filter_fn: Callable[[Dict[str, Any]], bool]
+        ) -> bool:
+        """Check if a node passes all metadata filters."""
         if query.filters:
             metadata = self.data.metadata_dict.get(node_id, {})
-            for filter in query.filters.filters:
-                if not self._apply_filter(metadata, filter):
-                    return False
+            if not filter_fn(metadata):
+                return False
         
         if query.node_ids and node_id not in query.node_ids:
             return False
 
         return True
-
-    def _apply_filter(self, metadata: Dict[str, Any], filter: MetadataFilter) -> bool:
-        """Apply a single metadata filter."""
-        value = metadata.get(filter.key)
-        if value is None:
-            return False
-
-        if filter.operator == FilterOperator.EQ:
-            return value == filter.value
-        elif filter.operator == FilterOperator.NE:
-            return value != filter.value
-        elif filter.operator == FilterOperator.GT:
-            return value > filter.value
-        elif filter.operator == FilterOperator.GTE:
-            return value >= filter.value
-        elif filter.operator == FilterOperator.LT:
-            return value < filter.value
-        elif filter.operator == FilterOperator.LTE:
-            return value <= filter.value
-        elif filter.operator == FilterOperator.IN:
-            return value in filter.value
-        elif filter.operator == FilterOperator.NIN:
-            return value not in filter.value
-        else:
-            raise ValueError(f"Unsupported filter operator: {filter.operator}")
