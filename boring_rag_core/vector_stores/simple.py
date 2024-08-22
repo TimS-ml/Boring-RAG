@@ -136,7 +136,10 @@ class SimpleVectorStore:
         return cls(SimpleVectorStoreData(**data))
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query the vector store."""
+        """
+        Perform top-k semantic search
+        The query object contains the query embedding, mode, and filters
+        """
         if query.query_embedding is None:
             raise ValueError("Query embedding is required.")
 

@@ -15,10 +15,11 @@ Ref:
 - [x] Similarity Search
 - [ ] (TBD) Embedding pooling
 
-- [ ] BaseIndex Draft
-- [ ] Ingestion Pipeline: Pack into splitter and embedding into IngestionPipeline
-- [ ] Storage Context
+- [x] BaseIndex Draft
+- [x] Ingestion Pipeline: Pack into splitter and embedding into IngestionPipeline
+- [x] Storage Context
 
+- [ ] BaseEmbedding.similarity vs SimpleVectorStore.query vs RetrieverQueryEngine._query
 - [ ] Retrieval
 - [ ] Generation
 
