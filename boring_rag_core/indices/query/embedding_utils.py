@@ -1,17 +1,17 @@
+"""
+For generally embedding comparison, checkout boring_rag_core/embeddings/base.py
+"""
+
 import numpy as np
 from typing import List, Tuple, Any, Optional
 from enum import Enum
 from sklearn import svm, linear_model
+from boring_rag_core.vector_stores.types import VectorStoreQueryMode
 
-class VectorStoreQueryMode(str, Enum):
-    DEFAULT = "default"
-    SVM = "svm"
-    LINEAR_REGRESSION = "linear_regression"
-    LOGISTIC_REGRESSION = "logistic_regression"
-    MMR = "mmr"
 
 def cosine_similarity(v1: np.ndarray, v2: np.ndarray) -> float:
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
 
 def get_top_k_embeddings(
     query_embedding: List[float],
@@ -33,6 +33,7 @@ def get_top_k_embeddings(
     top_ids = [embedding_ids[i] for i in sorted_indices]
     
     return top_similarities, top_ids
+
 
 def get_top_k_embeddings_learner(
     query_embedding: List[float],
@@ -71,6 +72,7 @@ def get_top_k_embeddings_learner(
     top_ids = [embedding_ids[i] for i in sorted_indices]
     
     return top_similarities, top_ids
+
 
 def get_top_k_mmr_embeddings(
     query_embedding: List[float],

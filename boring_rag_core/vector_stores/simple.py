@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 import numpy as np
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from boring_rag_core.schema import Document
 from dataclasses import dataclass, field, asdict
 
@@ -14,8 +14,16 @@ from boring_rag_core.vector_stores.types import (
     VectorStoreQuery, 
     VectorStoreQueryResult, 
     VectorStoreQueryMode,
-    FilterOperator
+    FilterOperator,
+    MetadataFilter
 )
+
+LEARNER_MODES = {
+    VectorStoreQueryMode.SVM,
+    VectorStoreQueryMode.LINEAR_REGRESSION,
+    VectorStoreQueryMode.LOGISTIC_REGRESSION,
+}
+MMR_MODE = VectorStoreQueryMode.MMR
 
 
 @dataclass
@@ -123,7 +131,7 @@ class SimpleVectorStore:
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=filtered_ids,
             )
-        elif query.mode in [VectorStoreQueryMode.SVM, VectorStoreQueryMode.LINEAR_REGRESSION, VectorStoreQueryMode.LOGISTIC_REGRESSION]:
+        elif query.mode in LEARNER_MODES:
             top_similarities, top_ids = get_top_k_embeddings_learner(
                 query.query_embedding,
                 filtered_embeddings,
@@ -131,13 +139,14 @@ class SimpleVectorStore:
                 embedding_ids=filtered_ids,
                 query_mode=query.mode,
             )
-        elif query.mode == VectorStoreQueryMode.MMR:
+        elif query.mode == MMR_MODE:
+            mmr_threshold = kwargs.get("mmr_threshold", None)
             top_similarities, top_ids = get_top_k_mmr_embeddings(
                 query.query_embedding,
                 filtered_embeddings,
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=filtered_ids,
-                mmr_threshold=query.mmr_threshold,
+                mmr_threshold=mmr_threshold,
             )
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")

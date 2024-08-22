@@ -1,3 +1,7 @@
+"""
+For query embedding comparison, checkout boring_rag_core/indices/query/embedding_utils.py
+"""
+
 from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import (
