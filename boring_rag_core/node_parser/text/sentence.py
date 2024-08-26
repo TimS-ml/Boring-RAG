@@ -1,7 +1,7 @@
 import re
 from tqdm.auto import tqdm
 from pathlib import Path
-from pydantic import Field
+from pydantic.v1 import Field
 from abc import ABC, abstractmethod
 from typing import (
     Any,

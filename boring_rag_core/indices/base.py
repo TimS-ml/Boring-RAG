@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence, Any
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from boring_rag_core.schema import Document, TransformComponent
 from boring_rag_core.ingestion.pipeline import IngestionPipeline

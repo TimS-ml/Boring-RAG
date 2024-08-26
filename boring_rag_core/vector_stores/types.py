@@ -6,7 +6,7 @@ from typing import (
 )
 from boring_rag_core.schema import Document
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 from dataclasses import dataclass, field
 
 DEFAULT_PERSIST_DIR = "./storage"
