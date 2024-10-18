@@ -174,7 +174,24 @@ class SimpleVectorStore:
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")
 
-        return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
+        top_nodes = []
+        for node_id in top_ids:
+            metadata = self.data.metadata_dict.get(node_id, {})
+            embedding = self.data.embedding_dict.get(node_id)
+            node = Document(
+                id_=node_id,
+                text="",  # TODO: where's the original text?
+                metadata=metadata,
+                embedding=embedding
+            )
+            top_nodes.append(node)
+
+        return VectorStoreQueryResult(
+            nodes=top_nodes,
+            similarities=top_similarities,
+            ids=top_ids
+        )
+        # return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
 
     def _apply_filters(self, query: VectorStoreQuery) -> Tuple[List[str], List[List[float]]]:
         """

@@ -29,5 +29,5 @@ def test_vector_store_query(sample_documents):
     result = store.query(query)
     
     cprint(result)
-    # assert len(result.nodes) == 2
-    # assert result.nodes[0].id_ == "1"  # Most similar should be the first document
+    assert len(result.nodes) == 2
+    assert result.nodes[0].id_ == "1"  # Most similar should be the first document
