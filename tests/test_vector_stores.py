@@ -20,7 +20,6 @@ def test_vector_store_add(sample_documents):
     assert len(ids) == 3
     assert set(ids) == {"1", "2", "3"}
 
-# TODO: Fix node=None
 def test_vector_store_query(sample_documents):
     store = SimpleVectorStore()
     store.add(sample_documents)
